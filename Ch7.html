@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Graphics Presentation</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Jess Mukiri" />
+    <script src="libse/header-attrs-2.7/header-attrs.js"></script>
+    <link href="libse/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libse/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Graphics Presentation
+### Jess Mukiri
+### 4/13/2021
+
+---
+
+
+class: left, middle, inverse
+
+#Graphics Chapter
+
+-  Create Interactive Plots
+
+- Responsive plots
+
+- Rendering plots
+
+---
+class: left, middle, inverse
+
+# Interactivity 
+
+&lt;code&gt;&lt;a href="https://rdrr.io/pkg/shiny/man/plotOutput.html"&gt;plotOutput()&lt;/a&gt;&lt;/code&gt; is an output &amp; input = 
+**interactive graphics**
+
+## Basics
+
+--
+
+### Clicking
+
+--
+
+### Other point events
+
+--
+
+### Brushing
+
+--
+
+###Modifying the plot
+
+--
+
+###Interactivity limitations
+
+--
+
+## Dynamic height and width
+
+--
+## Images
+
+
+---
+
+#Basics
+.pull-left[
+- A plot can respond to **4** different mouse:
+- &lt;code&gt;click&lt;/code&gt;,
+- &lt;code&gt;dblclick&lt;/code&gt; (double click),
+- &lt;code&gt;hover&lt;/code&gt; (when the mouse stays in the same place for a little while), and
+- &lt;code&gt;brush&lt;/code&gt; (a rectangular selection tool).
+
+&lt;p&gt;(Note the use of &lt;code&gt;&lt;a href="https://rdrr.io/pkg/shiny/man/req.html"&gt;req()&lt;/a&gt;&lt;/code&gt;, to make sure the app doesn’t do anything before the first click, and that the coordinates are in terms of the underlying &lt;code&gt;wt&lt;/code&gt; and &lt;code&gt;mpg&lt;/code&gt; variables.)&lt;/p&gt;
+]
+
+.pull-right[
+
+```r
+library(shiny)
+library(ggplot2)
+
+ui &lt;- fluidPage(
+* plotOutput("plot", click = "plot_click"),
+  verbatimTextOutput("info")
+)
+server &lt;- function(input, output) {
+  output$plot &lt;- renderPlot({
+    plot(mtcars$wt, mtcars$mpg)
+  }, res = 96)
+
+  output$info &lt;- renderPrint({
+*   req(input$plot_click)
+    x &lt;- round(input$plot_click$x, 2)
+    y &lt;- round(input$plot_click$y, 2)
+    cat("[", x, ", ", y, "]", sep = "")
+  })
+}
+shinyApp(ui = ui, server = server)
+```
+
+<div style="width: 100% ; height: 400px ; text-align: center; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box;" class="muted well">Shiny applications not supported in static R Markdown documents</div>
+]
+---
+# Clicking 
+.pull-left[
+- **X** &amp; **Y** = location of data
+-  &lt;code&gt;&lt;a href="https://rdrr.io/pkg/shiny/man/brushedPoints.html"&gt;nearPoints()&lt;/a&gt;&lt;/code&gt; is used 
+- You can use &lt;code&gt;&lt;a href="https://rdrr.io/r/base/browser.html"&gt;browser()&lt;/a&gt;&lt;/code&gt; to see what is returned
+]
+
+.pull-right[
+
+```r
+library(shiny)
+library(ggplot2)
+
+ui &lt;- fluidPage(
+* plotOutput("plot", click = "plot_click"),
+  tableOutput("data")
+)
+server &lt;- function(input, output, session) {
+  output$plot &lt;- renderPlot({
+    plot(mtcars$wt, mtcars$mpg)
+  }, res = 96)
+  
+  output$data &lt;- renderTable({
+*   nearPoints(mtcars, input$plot_click, xvar = "wt", yvar = "mpg")
+  })
+}
+shinyApp(ui = ui, server = server)
+```
+
+<div style="width: 100% ; height: 400px ; text-align: center; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box;" class="muted well">Shiny applications not supported in static R Markdown documents</div>
+]
+
+
+---
+# Other point events
+
+same approach works equally well with:
+- &lt;code&gt;click&lt;/code&gt;, 
+- &lt;code&gt;dblclick&lt;/code&gt;, and 
+- &lt;code&gt;hover&lt;/code&gt;
+
+***just change the name of the argument.***
+
+-  multiple interactions types on one plot
+
+---
+
+#Brushing 
+.pull-left[
+**Brush** =  a rectangular selection defined by four edges
+
+- Master &lt;code&gt;click&lt;/code&gt; and &lt;code&gt;&lt;a href="https://rdrr.io/pkg/shiny/man/brushedPoints.html"&gt;nearPoints()&lt;/a&gt;&lt;/code&gt;
+
+- switch to &lt;code&gt;brush&lt;/code&gt; argument and the &lt;code&gt;&lt;a href="https://rdrr.io/pkg/shiny/man/brushedPoints.html"&gt;brushedPoints()&lt;/a&gt;&lt;/code&gt; helper.&lt;/p&gt;
+]
+
+
+.pull-right[
+
+```r
+library(shiny)
+library(ggplot2)
+
+ui &lt;- fluidPage(
+*   plotOutput("plot", brush = "plot_brush"),
+    tableOutput("data")
+)
+server &lt;- function(input, output, session) {
+    output$plot &lt;- renderPlot({
+        ggplot(mtcars, aes(wt, mpg)) + geom_point()
+    }, res = 96)
+    
+    output$data &lt;- renderTable({
+*       brushedPoints(mtcars, input$plot_brush)
+    })
+}
+shinyApp(ui = ui, server = server)
+```
+
+<div style="width: 100% ; height: 400px ; text-align: center; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box;" class="muted well">Shiny applications not supported in static R Markdown documents</div>
+]
+
+---
+
+# Other point events
+
+- Displaying changes in the same plot you’re interacting with.
+Unfortunately this requires an advanced reactivity technique that has not been covered t: &lt;code&gt;&lt;a href="https://rdrr.io/pkg/shiny/man/reactiveVal.html"&gt;reactiveVal()&lt;/a&gt;&lt;/code&gt;.
+-Covered in Chapter &lt;a href="reactivity-components.html#reactivity-components"&gt;16&lt;/a&gt;
+
+---
+
+#Interactivity limitations
+
+***Flow***
+1. JavaScript captures the mouse event.
+1. Shiny sends the mouse event data back to R, telling the app that the input is now out of date.
+1. All the downstream reactive consumers are recomputed.
+1. plotOutput() generates a new PNG and sends it to the browser.
+
+- time is key, to draw, to render etc
+
+**it’s not possible to create Shiny apps where action and response is percieved as instanteous** 
+
+- More speed = **JavaScript**  or  Use **plotly** package, as documented in the book &lt;a href="https://plotly-r.com"&gt;&lt;em&gt;Interactive web-based data visualization with R, plotly, and shiny&lt;/em&gt;&lt;/a&gt;, by Carson Sievert
+
+---
+
+# Dynamic height and width
+.pull-left[
+- make plot size reactive, so the width and height changes in response to user actions
+
+- &lt;code&gt;width&lt;/code&gt; and &lt;code&gt;height&lt;/code&gt; arguments of &lt;code&gt;&lt;a href="https://rdrr.io/pkg/shiny/man/renderPlot.html"&gt;renderPlot()&lt;/a&gt;&lt;/code&gt; — these now must be defined in the server, not the UI due to change
+]
+
+.pull-right[
+
+```r
+ui &lt;- fluidPage(
+  sliderInput("height", "height", min = 100, max = 500, value = 250),
+  sliderInput("width", "width", min = 100, max = 500, value = 250),
+  plotOutput("plot", width = 250, height = 250)
+)
+server &lt;- function(input, output, session) {
+  output$plot &lt;- renderPlot(
+*   width = function() input$width,
+*   height = function() input$height,
+    res = 96,
+    {
+      plot(rnorm(20), rnorm(20))
+    }
+  )
+}
+```
+***note data does not change**
+]
+
+---
+## Images
+
+- You can use &lt;code&gt;&lt;a href="https://rdrr.io/pkg/shiny/man/renderImage.html"&gt;renderImage()&lt;/a&gt;&lt;/code&gt; if you want to display existing images (not plots).
+
+
+- **renderImage()** needs to return a list. The only crucial argument is src, a local path to the image file. 
+
+Supply:
+- A contentType, which defines the MIME type of the image. If not provided, Shiny will guess from the file extension, so you only need to supply this if your images don’t have extensions.
+
+- The width and height of the image, if known.
+
+- Any other arguments, like class or alt will be added as attributes to the &lt;img&gt; tag in the HTML.
+
+- You must also supply the **deleteFile** argument. 
+
+- **renderImage()** was made to work with temporary files= deleting  images after rendering them. 
+- Behaviour changed in Shiny 1.5.0. 
+
+https://shiny.rstudio.com/gallery/plot-interaction-zoom.html
+
+---
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
